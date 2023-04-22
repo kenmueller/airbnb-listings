@@ -4,7 +4,7 @@ if (!process.env.CHUNK_DELAY) throw new Error('Missing CHUNK_DELAY')
 const puppeteer = require('puppeteer')
 const chunk = require('lodash/chunk')
 
-const getListingsIn = require('./getListingsIn')
+const getListings = require('./getListings')
 const setListingsOut = require('./setListingsOut')
 const getListingInfo = require('./getListingInfo')
 const getListingAddress = require('./getListingAddress')
@@ -25,7 +25,12 @@ const CHUNK_DELAY = Number.parseFloat(process.env.CHUNK_DELAY) * 1000
 const main = async () => {
 	const browser = await puppeteer.launch()
 
-	const listingsIn = await getListingsIn(MAX_LISTINGS, OFFSET)
+	const listingsIn = await getListings(
+		'listings-in.csv',
+		MAX_LISTINGS,
+		OFFSET
+	)
+
 	const listingsInChunked = chunk(listingsIn, CHUNK_SIZE)
 
 	/** @type {Record<string, string>[]} */
@@ -75,7 +80,8 @@ const main = async () => {
 		await sleep(CHUNK_DELAY)
 	}
 
-	await setListingsOut(listingsOut)
+	const previousListingsOut = await getListings('listings-out.csv')
+	await setListingsOut(listingsOut, previousListingsOut)
 
 	await browser.close()
 }

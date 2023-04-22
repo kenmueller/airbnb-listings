@@ -14,6 +14,10 @@ const MAX_LISTINGS = process.env.MAX_LISTINGS
 	? Number.parseInt(process.env.MAX_LISTINGS)
 	: undefined
 
+const OFFSET = process.env.OFFSET
+	? Number.parseInt(process.env.OFFSET)
+	: undefined
+
 const CHUNK_SIZE = Number.parseInt(process.env.CHUNK_SIZE)
 const CHUNK_DELAY = Number.parseFloat(process.env.CHUNK_DELAY) * 1000
 
@@ -21,7 +25,7 @@ const CHUNK_DELAY = Number.parseFloat(process.env.CHUNK_DELAY) * 1000
 const main = async () => {
 	const browser = await puppeteer.launch()
 
-	const listingsIn = await getListingsIn(MAX_LISTINGS)
+	const listingsIn = await getListingsIn(MAX_LISTINGS, OFFSET)
 	const listingsInChunked = chunk(listingsIn, CHUNK_SIZE)
 
 	/** @type {Record<string, string>[]} */

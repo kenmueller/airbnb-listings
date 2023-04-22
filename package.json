@@ -1,0 +1,16 @@
+{
+	"name": "airbnb",
+	"version": "1.0.0",
+	"scripts": {
+		"start": "env-cmd node src"
+	},
+	"dependencies": {
+		"cheerio": "^1.0.0-rc.12",
+		"csv-parse": "^5.3.8",
+		"env-cmd": "^10.1.0",
+		"lodash": "^4.17.21",
+		"node-geocoder": "^4.2.0",
+		"puppeteer": "^19.10.1"
+	},
+	"private": true
+}

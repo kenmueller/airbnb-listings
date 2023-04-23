@@ -9,82 +9,101 @@ const setListingsOut = require('./setListingsOut')
 const getListingInfo = require('./getListingInfo')
 const getListingAddress = require('./getListingAddress')
 const sleep = require('./sleep')
-
-const MAX_LISTINGS = process.env.MAX_LISTINGS
-	? Number.parseInt(process.env.MAX_LISTINGS)
-	: undefined
-
-const OFFSET = process.env.OFFSET
-	? Number.parseInt(process.env.OFFSET)
-	: undefined
+const log = require('./log')
 
 const CHUNK_SIZE = Number.parseInt(process.env.CHUNK_SIZE)
 const CHUNK_DELAY = Number.parseFloat(process.env.CHUNK_DELAY) * 1000
 
 /** @type {() => Promise<void>} */
 const main = async () => {
-	const [browser, listingsIn, previousListingsOut] = await Promise.all([
-		puppeteer.launch(),
-		getListings('listings-in.csv', MAX_LISTINGS, OFFSET),
-		getListings('listings-out.csv')
-	])
+	const browser = await puppeteer.launch({ protocolTimeout: 500_000 })
 
-	const listingsInChunked = chunk(listingsIn, CHUNK_SIZE)
+	try {
+		const previousListingsOut = await getListings('listings-out.csv')
 
-	/** @type {Record<string, string>[]} */
-	const listingsOut = []
-
-	let chunksCompleted = 0
-	let listingsCompleted = 0
-
-	for (const chunk of listingsInChunked) {
-		const results = await Promise.allSettled(
-			chunk.map(async listing => {
-				const info = await getListingInfo(listing.id, browser)
-
-				if (!info) {
-					console.log(
-						`Listing #${++listingsCompleted} LISTING NOT FOUND`
-					)
-					return null
-				}
-
-				const address = await getListingAddress(listing)
-
-				if (!address) {
-					console.log(
-						`Listing #${++listingsCompleted} ADDRESS NOT FOUND`
-					)
-					return null
-				}
-
-				console.log(`Listing #${++listingsCompleted} DONE`)
-
-				return { ...listing, ...info, ...address }
-			})
+		/** @type {[Record<string, string>, number][]} */
+		const listingsInAll = (await getListings('listings-in.csv')).map(
+			(listing, index) => [listing, index]
 		)
 
-		/** @type {Record<string, string>[]} */
-		const resultsPruned = results
-			.map(result =>
-				result.status === 'fulfilled' ? result.value : null
+		const listingsInCount = listingsInAll.length
+
+		const listingsIn = listingsInAll.filter(
+			([listing]) =>
+				// Filter the already loaded listings out
+				!previousListingsOut.some(
+					previousListing => previousListing.id === listing.id
+				)
+		)
+
+		const listingsInChunked = chunk(listingsIn, CHUNK_SIZE)
+
+		const listingsOut = []
+
+		let chunksCompleted = 0
+
+		for (const chunk of listingsInChunked) {
+			let successfulResults = 0
+
+			const results = await Promise.allSettled(
+				chunk.map(async ([listing, index]) => {
+					const prefix = `Listing ${index + 1}/${listingsInCount} `
+
+					try {
+						const [info, address] = await Promise.all([
+							getListingInfo(listing.id, browser),
+							getListingAddress(listing)
+						])
+
+						if (!(info || address))
+							log(
+								prefix,
+								'LISTING NOT FOUND AND ADDRESS NOT FOUND',
+								'error'
+							)
+						else if (!info)
+							log(prefix, 'LISTING NOT FOUND', 'error')
+						else if (!address)
+							log(prefix, 'ADDRESS NOT FOUND', 'error')
+						else log(prefix, 'DONE', 'success')
+
+						if (info && address) successfulResults++
+
+						return {
+							...listing,
+							...(info ?? getListingInfo.empty),
+							...(address ?? getListingAddress.empty)
+						}
+					} catch (error) {
+						log(prefix, `ERROR ${error}`, 'error')
+						throw error
+					}
+				})
 			)
-			.filter(Boolean)
 
-		listingsOut.push(...resultsPruned)
+			/** @type {Record<string, string>[]} */
+			const resultsPruned = results
+				.map(result =>
+					result.status === 'fulfilled' ? result.value : null
+				)
+				.filter(Boolean)
 
-		console.log(
-			`Chunk #${++chunksCompleted} DONE with ${resultsPruned.length}/${
-				results.length
-			} listings`
-		)
+			if (resultsPruned.length) {
+				listingsOut.push(...resultsPruned)
+				await setListingsOut(listingsOut, previousListingsOut)
+			}
 
-		await sleep(CHUNK_DELAY)
+			log(
+				`Chunk #${++chunksCompleted} `,
+				`DONE with ${successfulResults}/${results.length} successful listings`,
+				successfulResults ? 'success' : 'error'
+			)
+
+			await sleep(CHUNK_DELAY)
+		}
+	} finally {
+		await browser.close()
 	}
-
-	await setListingsOut(listingsOut, previousListingsOut)
-
-	await browser.close()
 }
 
 main()

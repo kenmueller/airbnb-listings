@@ -9,7 +9,7 @@ const geocoder = Geocoder({
 	formatter: 'json'
 })
 
-/** @type {(listing: Record<string, string>) => Promise<Record<string, string>>} */
+/** @type {(listing: Record<string, string>) => Promise<Record<string, string> | null>} */
 const getListingAddress = async listing => {
 	const results = await geocoder.reverse({
 		lat: Number.parseFloat(listing.latitude),
@@ -29,6 +29,17 @@ const getListingAddress = async listing => {
 		county: result.administrativeLevels?.level2long ?? '',
 		state: result.administrativeLevels?.level1long ?? ''
 	}
+}
+
+getListingAddress.empty = {
+	address: '',
+	street_number: '',
+	street_name: '',
+	country: '',
+	zip_code: '',
+	neighborhood: '',
+	county: '',
+	state: ''
 }
 
 module.exports = getListingAddress

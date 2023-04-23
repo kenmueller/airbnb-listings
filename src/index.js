@@ -23,13 +23,11 @@ const CHUNK_DELAY = Number.parseFloat(process.env.CHUNK_DELAY) * 1000
 
 /** @type {() => Promise<void>} */
 const main = async () => {
-	const browser = await puppeteer.launch()
-
-	const listingsIn = await getListings(
-		'listings-in.csv',
-		MAX_LISTINGS,
-		OFFSET
-	)
+	const [browser, listingsIn, previousListingsOut] = await Promise.all([
+		puppeteer.launch(),
+		getListings('listings-in.csv', MAX_LISTINGS, OFFSET),
+		getListings('listings-out.csv')
+	])
 
 	const listingsInChunked = chunk(listingsIn, CHUNK_SIZE)
 
@@ -40,7 +38,7 @@ const main = async () => {
 	let listingsCompleted = 0
 
 	for (const chunk of listingsInChunked) {
-		const results = await Promise.all(
+		const results = await Promise.allSettled(
 			chunk.map(async listing => {
 				const info = await getListingInfo(listing.id, browser)
 
@@ -67,7 +65,11 @@ const main = async () => {
 		)
 
 		/** @type {Record<string, string>[]} */
-		const resultsPruned = results.filter(Boolean)
+		const resultsPruned = results
+			.map(result =>
+				result.status === 'fulfilled' ? result.value : null
+			)
+			.filter(Boolean)
 
 		listingsOut.push(...resultsPruned)
 
@@ -80,7 +82,6 @@ const main = async () => {
 		await sleep(CHUNK_DELAY)
 	}
 
-	const previousListingsOut = await getListings('listings-out.csv')
 	await setListingsOut(listingsOut, previousListingsOut)
 
 	await browser.close()

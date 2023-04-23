@@ -35,6 +35,7 @@ const getListingInfo = async (listingId, browser) => {
 		return {
 			guests: data.guests ?? data.guest ?? '',
 			beds: data.beds ?? data.bed ?? '',
+			bedrooms: data.bedrooms ?? data.bedroom ?? '',
 			baths: data.baths ?? data.bath ?? ''
 		}
 	} finally {

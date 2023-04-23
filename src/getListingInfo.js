@@ -1,7 +1,5 @@
 if (!process.env.USER_AGENT) throw new Error('Missing USER_AGENT')
 
-const cheerio = require('cheerio')
-
 /** @type {(listingId: string, browser: import('puppeteer').Browser) => Promise<Record<string, string> | null>} */
 const getListingInfo = async (listingId, browser) => {
 	const page = await browser.newPage()
@@ -18,11 +16,11 @@ const getListingInfo = async (listingId, browser) => {
 			return null
 		}
 
-		const $ = cheerio.load(await page.content())
+		const text = await page.evaluate(
+			() => document.querySelector('.lgx66tx').textContent
+		)
 
-		const data = $('.lgx66tx')
-			.first()
-			.text()
+		const data = text
 			.split('·')
 			.map(s => s.trim())
 			.filter(Boolean)

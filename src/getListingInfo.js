@@ -46,6 +46,7 @@ const getListingInfo = async (listingId, browser) => {
 getListingInfo.empty = {
 	guests: '',
 	beds: '',
+	bedrooms: '',
 	baths: ''
 }
 

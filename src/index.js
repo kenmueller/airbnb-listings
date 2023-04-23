@@ -16,7 +16,10 @@ const CHUNK_DELAY = Number.parseFloat(process.env.CHUNK_DELAY) * 1000
 
 /** @type {() => Promise<void>} */
 const main = async () => {
-	const browser = await puppeteer.launch({ protocolTimeout: 500_000 })
+	const browser = await puppeteer.launch({
+		args: ['--no-sandbox', '--disable-setuid-sandbox'],
+		protocolTimeout: 500_000
+	})
 
 	try {
 		const previousListingsOut = await getListings('listings-out.csv')

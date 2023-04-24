@@ -14,9 +14,9 @@ const sleep = require('./sleep')
 const log = require('./log')
 
 const CHUNK_SIZE = Number.parseInt(process.env.CHUNK_SIZE)
-const CHUNK_DELAY = Number.parseFloat(process.env.CHUNK_DELAY) * 1000
+const CHUNK_DELAY = Number.parseInt(process.env.CHUNK_DELAY)
 const SECTION_SIZE = Number.parseInt(process.env.SECTION_SIZE)
-const SECTION_DELAY = Number.parseFloat(process.env.SECTION_DELAY) * 1000
+const SECTION_DELAY = Number.parseInt(process.env.SECTION_DELAY)
 
 /** @type {() => Promise<void>} */
 const main = async () => {

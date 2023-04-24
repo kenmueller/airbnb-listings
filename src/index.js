@@ -1,5 +1,7 @@
 if (!process.env.CHUNK_SIZE) throw new Error('Missing CHUNK_SIZE')
 if (!process.env.CHUNK_DELAY) throw new Error('Missing CHUNK_DELAY')
+if (!process.env.SECTION_SIZE) throw new Error('Missing SECTION_SIZE')
+if (!process.env.SECTION_DELAY) throw new Error('Missing SECTION_DELAY')
 
 const puppeteer = require('puppeteer')
 const chunk = require('lodash/chunk')
@@ -13,6 +15,8 @@ const log = require('./log')
 
 const CHUNK_SIZE = Number.parseInt(process.env.CHUNK_SIZE)
 const CHUNK_DELAY = Number.parseFloat(process.env.CHUNK_DELAY) * 1000
+const SECTION_SIZE = Number.parseInt(process.env.SECTION_SIZE)
+const SECTION_DELAY = Number.parseFloat(process.env.SECTION_DELAY) * 1000
 
 /** @type {() => Promise<void>} */
 const main = async () => {
@@ -102,7 +106,11 @@ const main = async () => {
 				successfulResults ? 'success' : 'error'
 			)
 
-			await sleep(CHUNK_DELAY)
+			await sleep(
+				chunksCompleted % SECTION_SIZE === 0
+					? SECTION_DELAY
+					: CHUNK_DELAY
+			)
 		}
 	} finally {
 		await browser.close()

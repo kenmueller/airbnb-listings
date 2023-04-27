@@ -11,17 +11,27 @@ const getListingInfo = async (listingId, browser) => {
 			waitUntil: 'networkidle0'
 		})
 
-		if (!new URL(page.url()).searchParams.has('source_impression_id')) {
-			// Listing does not exist, no source_impression_id
+		const errorMessage = await page.evaluate(
+			() =>
+				document.querySelector(
+					'.row.space-top-8.space-8.row-table > .col-5.col-middle > h2'
+				)?.textContent
+		)
+
+		if (
+			errorMessage ===
+			"We can't seem to find the page you're looking for."
+		) {
+			// Listing does not exist
 			return null
 		}
 
 		const text = await page.evaluate(
-			() => document.querySelector('.lgx66tx').textContent
+			() => document.querySelector('.lgx66tx')?.textContent
 		)
 
 		const data = text
-			.split('·')
+			?.split('·')
 			.map(s => s.trim())
 			.filter(Boolean)
 			.reduce((data, line) => {
@@ -30,12 +40,21 @@ const getListingInfo = async (listingId, browser) => {
 				return data
 			}, {})
 
-		return {
-			guests: data.guests ?? data.guest ?? '',
-			beds: data.beds ?? data.bed ?? '',
-			bedrooms: data.bedrooms ?? data.bedroom ?? '',
-			baths: data.baths ?? data.bath ?? ''
+		const result = {
+			guests: data?.guests ?? data?.guest ?? '',
+			beds: data?.beds ?? data?.bed ?? '',
+			bedrooms: data?.bedrooms ?? data?.bedroom ?? '',
+			baths: data?.baths ?? data?.bath ?? ''
 		}
+
+		const validCount = Object.values(result).filter(
+			result => result && !Number.isNaN(Number.parseInt(result))
+		).length
+
+		if (validCount < 2)
+			throw new Error('Less than 2 valid listing info fields')
+
+		return result
 	} finally {
 		await page.close()
 	}

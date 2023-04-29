@@ -1,5 +1,7 @@
 if (!process.env.USER_AGENT) throw new Error('Missing USER_AGENT')
 
+const getListingUrl = require('./getListingUrl')
+
 /** @type {(listingId: string, browser: import('puppeteer').Browser) => Promise<Record<string, string> | null>} */
 const getListingInfo = async (listingId, browser) => {
 	const page = await browser.newPage()
@@ -7,7 +9,7 @@ const getListingInfo = async (listingId, browser) => {
 	try {
 		await page.setUserAgent(process.env.USER_AGENT)
 
-		await page.goto(`https://www.airbnb.com/rooms/${listingId}`, {
+		await page.goto(getListingUrl(listingId), {
 			waitUntil: 'networkidle0'
 		})
 

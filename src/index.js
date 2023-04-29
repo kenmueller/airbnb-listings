@@ -12,6 +12,7 @@ const getListingInfo = require('./getListingInfo')
 const getListingAddress = require('./getListingAddress')
 const sleep = require('./sleep')
 const log = require('./log')
+const getListingUrl = require('./getListingUrl')
 
 const CHUNK_SIZE = Number.parseInt(process.env.CHUNK_SIZE)
 const CHUNK_DELAY = Number.parseInt(process.env.CHUNK_DELAY)
@@ -65,14 +66,33 @@ const main = async () => {
 						if (!(info || address))
 							log(
 								prefix,
-								'LISTING NOT FOUND AND ADDRESS NOT FOUND',
+								`LISTING NOT FOUND AND ADDRESS NOT FOUND ${getListingUrl(
+									listing.id
+								)}`,
 								'error'
 							)
 						else if (!info)
-							log(prefix, 'LISTING NOT FOUND', 'error')
+							log(
+								prefix,
+								`LISTING NOT FOUND ${getListingUrl(
+									listing.id
+								)}`,
+								'error'
+							)
 						else if (!address)
-							log(prefix, 'ADDRESS NOT FOUND', 'error')
-						else log(prefix, 'DONE', 'success')
+							log(
+								prefix,
+								`ADDRESS NOT FOUND ${getListingUrl(
+									listing.id
+								)}`,
+								'error'
+							)
+						else
+							log(
+								prefix,
+								`DONE ${getListingUrl(listing.id)}`,
+								'success'
+							)
 
 						if (info && address) successfulResults++
 
@@ -82,7 +102,11 @@ const main = async () => {
 							...(address ?? getListingAddress.empty)
 						}
 					} catch (error) {
-						log(prefix, `ERROR ${error}`, 'error')
+						log(
+							prefix,
+							`ERROR ${error} ${getListingUrl(listing.id)}`,
+							'error'
+						)
 						throw error
 					}
 				})

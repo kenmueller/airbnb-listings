@@ -2,7 +2,8 @@
 	"name": "airbnb",
 	"version": "1.0.0",
 	"scripts": {
-		"start": "env-cmd node src"
+		"start": "env-cmd node src",
+		"listings-with-info": "env-cmd node src/logListingsWithInfo"
 	},
 	"dependencies": {
 		"chalk": "^4.1.2",

@@ -17,7 +17,7 @@ const main = async () => {
 			result => result && !Number.isNaN(Number.parseInt(result))
 		).length
 
-		return validCount >= 2
+		return !!validCount
 	})
 
 	log('Listings with info: ', listingsOutWithInfo.length, 'success')

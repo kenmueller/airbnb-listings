@@ -53,8 +53,8 @@ const getListingInfo = async (listingId, browser) => {
 			result => result && !Number.isNaN(Number.parseInt(result))
 		).length
 
-		if (validCount < 2)
-			throw new Error('Less than 2 valid listing info fields')
+		if (!validCount)
+			throw new Error('No valid listing info fields')
 
 		return result
 	} finally {

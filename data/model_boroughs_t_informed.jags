@@ -1,0 +1,24 @@
+model {
+  for (i in 1:Ntotal) {
+    y[i] ~ dt(mu[i], 1/ySigma[xNom[i]]^2, nu)
+    mu[i] <- a0 + a[xNom[i]] + aMet*(xMet[i] - xMetMean)
+  }
+  nu <- nuMinusOne + 1
+  nuMinusOne ~ dexp(1/29.0)
+  for ( j in 1:NxNomLvl ) {
+    a[j] ~ dnorm(boroughMu[borough[j]], 1/aSigma^2)
+    ySigma[j] ~ dgamma(ySigmaSh, ySigmaRa)
+  }
+  ySigmaSh <- 1 + ySigmaMode * ySigmaRa
+  ySigmaRa <- ((ySigmaMode + sqrt(ySigmaMode^2 + 4*ySigmaSD^2)) / (2*ySigmaSD^2))
+  ySigmaMode ~ dgamma(aGammaShRa[1], aGammaShRa[2])
+  ySigmaSD ~ dgamma(aGammaShRa[1], aGammaShRa[2])
+  a0 ~ dnorm(yMean, 1/(ySD*5)^2)
+  aSigma ~ dgamma(aGammaShRa[1], aGammaShRa[2])
+  aMet ~ dnorm(0 , 1/(2*ySD/xMetSD)^2)
+  for (k in 1:boroughs) { boroughMu[k] ~ dnorm(boroughMuPrior[k], 1/boroughSigma^2) }
+  boroughSigma ~ dgamma(aGammaShRa[1], aGammaShRa[2])
+
+  b0 <- a0 + mean(a[1:NxNomLvl]) - aMet * xMetMean
+  for (j in 1:NxNomLvl) { b[j] <- a[j] - mean(a[1:NxNomLvl]) }
+}
